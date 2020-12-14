@@ -1,0 +1,102 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "deploymentParameters": {
+            "type": "object",
+            "metadata": {
+                "description": "Deployment Parameters"
+            }
+        }
+    },
+    
+    "variables": {
+    },
+
+
+    "resources": [
+      {
+        "name": "[parameters('deploymentParameters').imageTemplateName]",
+        "type": "Microsoft.VirtualMachineImages/imageTemplates",
+        "apiVersion": "2019-05-01-preview",
+        "location": "[parameters('deploymentParameters').location]",
+        "dependsOn": [],
+        "tags": {
+            "imagebuilderTemplate": "AzureImageBuilderSIG",
+            "userIdentity": "enabled"
+                },
+            "identity": {
+                "type": "UserAssigned",
+                        "userAssignedIdentities": {
+                        "[parameters('deploymentParameters').userAssignedIdentities]": {}                            
+                    }
+                    },
+        
+        "properties": {
+            "buildTimeoutInMinutes" : 100,
+
+            "vmProfile": 
+                    {
+                    "vmSize": "[parameters('deploymentParameters').vmSize]",
+                    "osDiskSizeGB": "[parameters('deploymentParameters').osDiskSizeGB]"
+                    },
+        
+            "source": {
+                "type": "PlatformImage",
+                    "publisher": "[parameters('deploymentParameters').publisher]",
+                    "offer": "[parameters('deploymentParameters').offer]",
+                    "sku": "[parameters('deploymentParameters').sku]",
+                    "version": "[parameters('deploymentParameters').version]"                
+            },
+            "customize": [             
+                    {
+                        "type": "PowerShell",
+                        "name": "CreateBuildPath",
+                        "scriptUri": "[parameters('deploymentParameters').AIBScriptBlobPath]"
+                    },
+                    {
+                        "type": "WindowsRestart",
+                        "restartCheckCommand": "echo Azure-Image-Builder-Restarted-the-VM  > c:\\buildArtifacts\\azureImageBuilderRestart.txt",
+                        "restartTimeout": "5m"
+                    },  
+                    {
+                        "type": "WindowsUpdate",
+                        "searchCriteria": "IsInstalled=0",
+                        "filters": [
+                            "exclude:$_.Title -like '*Preview*'",
+                            "include:$true"
+                                    ],
+                        "updateLimit": 40
+                    }
+
+            ],
+            "distribute": 
+            [
+                {   
+                    "type": "SharedImage",
+                    "galleryImageId": "[parameters('deploymentParameters').galleryImageId]" ,
+                    "runOutputName": "[parameters('deploymentParameters').runOutputName]",
+                    "artifactTags": {
+                        "source": "azureVmImageBuilder",
+                        "baseosimg": "windows10"
+                    },
+                    "replicationRegions": [
+                      "westeurope",
+                      "northeurope"
+                    ]
+                }
+            ]
+            }
+        }
+
+    
+    ]
+}    
+
+
+
+
+
+
+
+
