@@ -71,6 +71,7 @@ $resourceID = az group show --name $imageResourceGroup --query id --output tsv
  # grant role definition to image builder service principal
  az role assignment create --role $imageRoleDefName --assignee-object-id $idenityNamePrincipalId --scope $resourceID
 
+<<<<<<< HEAD
 # Get Infrastructure Dir
 $dir = Get-Location | Split-Path
 $infraDir = $dir + '\Infrastructure' 
@@ -86,6 +87,17 @@ az deployment group create `
 
 
 
+=======
+ # Create Image Gallery
+$parameterFile = '.\deployment.Parameters.json' 
+az deployment group create `
+              --resource-group $imageResourceGroup `
+              --name (New-Guid).Guid `
+              --template-file .\SharedImageGallery.json `
+              --parameters $parameterFile
+
+
+>>>>>>> 5c058db6981a991b35f44ed8f788de4b64cbaa18
 $galleryImageId = az sig image-definition show `
                --resource-group $imageResourceGroup `
                --gallery-name $galleryName `
@@ -94,6 +106,7 @@ $galleryImageId = az sig image-definition show `
                --output tsv
 
 ## Upload AIBWin10MSImageBuild.ps1 to a storage account and get bloburl
+<<<<<<< HEAD
 
 az deployment group create `
               --resource-group $imageResourceGroup `
@@ -136,6 +149,14 @@ $connectionString = az storage account show-connection-string `
                         --sas-token $SasToken 
 
 
+=======
+# 1) Create Storage Account
+# 2) Upload script 
+# get blob:
+$storageAccountName = ''
+$containerName = ''
+$blobName = = 'AIBWin10MSImageBuild.ps1'
+>>>>>>> 5c058db6981a991b35f44ed8f788de4b64cbaa18
 $date = (Get-Date).AddMinutes(90).ToString("yyyy-MM-dTH:mZ")
 $date = $date.Replace(".",":")
 
