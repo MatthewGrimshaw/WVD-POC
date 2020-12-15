@@ -94,6 +94,34 @@ $galleryImageId = az sig image-definition show `
                --query id `
                --output tsv
 
+## Upload AIBWin10MSImageBuild.ps1 to a storage account and get bloburl
+# 1) Create Storage Account
+# 2) Upload script 
+# get blob:
+$storageAccountName = ''
+$containerName = ''
+$blobName = = 'AIBWin10MSImageBuild.ps1'
+$date = (Get-Date).AddMinutes(90).ToString("yyyy-MM-dTH:mZ")
+$date = $date.Replace(".",":")
+
+$artifactsStorageKey = az storage account keys list `
+                       --account-name $storageAccountName `
+                       --query [0].value `
+                       --output tsv
+
+$AIBScriptBlobPath =          az storage blob generate-sas `
+                            --account-name $storageAccountName `
+                            --container-name $containerName `
+                            --name $blobName  `
+                            --account-key $artifactsStorageKey `
+                            --permissions rw `
+                            --expiry $date `
+                            --full-uri `
+                            --output tsv
+
+write-output "AIBScriptBlobPath : $AIBScriptBlobPath"
+
+
 #Create Image Template
 az image builder create `
  -resource-group $imageResourceGroup `
