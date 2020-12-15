@@ -1,0 +1,32 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "deploymentParameters": {
+      "value": {   
+      "location":  "westeurope",
+      "artifactsStorageAccountType": "Standard_LRS",
+      "artifactsStorageAccountName": "wvdartifacts",
+      "artifactsContainerName": "wvdArtifactsContainer",
+      "ImageBuilderResourceGroup":"WVDImageBuilder",
+      "ImageBuilderManagedIdentityName":"ImanageBuildUserAssignedIdentity",
+      "ImageBuilderRoleDefintionName" : "WVDImageBuilderRoleDefinition",
+      "galleryName":"wvdImageGallery",
+      "galleryImageDefinitionName" :"Windows10MultiUser",
+      "galleryImageId":"",
+      "galleryImageVersionName":"latest",
+      "runOutputName": "win10MultiUserSigR01",
+      "imageTemplateName":"window10MultiUserV1",
+      "userAssignedIdentities":"",
+      "vmSize":"Standard_D1_v2",
+      "osDiskSizeGB": 127,
+      "osVMDiskType":"Premium_LRS",
+      "publisher": "MicrosoftWindowsDesktop",
+      "offer": "windows-10",
+      "sku": "20h1-evd",
+      "version": "latest",
+      "AIBScriptBlobPath":""      
+      }
+    }    
+  }
+}

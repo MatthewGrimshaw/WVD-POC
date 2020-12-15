@@ -1,0 +1,47 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "deploymentParameters": {
+            "type": "object",
+            "metadata": {
+                "description": "Deployment Parameters"
+            }
+        }
+    },
+    "variables": {
+        "tempArtifactsStorageAccountName":"[concat(parameters('deploymentParameters').artifactsStorageAccountName, uniquestring(resourceGroup().id))]",
+        "artifactsStorageAccountName":"[if(greater(length(variables('tempArtifactsStorageAccountName')), 23), substring(variables('tempArtifactsStorageAccountName'), 0, 24), variables('tempArtifactsStorageAccountName'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('artifactsStorageAccountName')]",
+            "location": "[parameters('deploymentParameters').location]",
+            "apiVersion": "2018-07-01",
+            "sku": {
+                "name": "[parameters('deploymentParameters').artifactsStorageAccountType]"
+            },
+            "kind": "StorageV2",
+            "properties": {
+                "accessTier": "Hot"
+            },
+            "resources": [
+                {
+                    "type": "blobServices/containers",
+                    "apiVersion": "2019-06-01",
+                    "name": "[toLower(concat('default/', parameters('deploymentParameters').artifactsContainerName))]",
+                    "dependsOn": [
+                        "[variables('artifactsStorageAccountName')]"
+                    ]
+                }
+            ]
+        }
+    ],
+    "outputs": {
+        "storageAccountName": {
+            "type": "string",
+            "value": "[variables('artifactsStorageAccountName')]"
+        }
+    }
+}
