@@ -14,11 +14,11 @@
       "ImageBuilderRoleDefintionName" : "WVDImageBuilderRoleDefinition",
       "galleryName":"wvdImageGallery",
       "galleryImageDefinitionName" :"Windows10MultiUser",
-      "galleryImageId":"/subscriptions/8fc359b8-cb57-4af8-ab59-60f7506301c9/resourceGroups/WVDImageBuilder/providers/Microsoft.Compute/galleries/wvdImageGallery/images/Windows10MultiUser",
+      "galleryImageId":"",
       "galleryImageVersionName":"latest",
       "runOutputName": "win10MultiUserSigR01",
       "imageTemplateName":"window10MultiUserV1",
-      "userAssignedIdentities":"/subscriptions/8fc359b8-cb57-4af8-ab59-60f7506301c9/resourcegroups/WVDImageBuilder/providers/Microsoft.ManagedIdentity/userAssignedIdentities/ImanageBuildUserAssignedIdentity",
+      "userAssignedIdentities":"",
       "vmSize":"Standard_D1_v2",
       "osDiskSizeGB": 127,
       "osVMDiskType":"Premium_LRS",
@@ -26,11 +26,8 @@
       "offer": "windows-10",
       "sku": "20h1-evd",
       "version": "latest",
-      "AIBScriptBlobPath":"", 
-      "AIBScriptBlobName":"AIBWin10MSImageBuild.ps1"   
+      "AIBScriptBlobPath":""      
       }
     }    
   }
 }
-
-

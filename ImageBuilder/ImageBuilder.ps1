@@ -1,11 +1,28 @@
-$subscriptionID = '<subscriptionID>'
-$imageResourceGroup = 'ImageBuilder'
-$location = 'westeurope'
-$ImageBuilderManagedIdentityName = 'ImageBuildUserAssignedIdentity'
-$imageRoleDefName = 'WVDImageBuilderRoleDefinition'
-$galleryName = 'wvdImageGallery'
-$galleryImageDefinition = 'Windows10MultiUser'
-$imageTemplateName = ''
+# Check that we are in the right Directory
+
+If(!(((Get-Location) -split '\\')[-1] -Match 'ImageBuilder')){
+  write-output "Please execute this script from the 'ImageBuilder' directory"
+  exit
+}
+
+#Create Paramters File
+$parameterFile = '.\deployment.Parameters.json'
+Copy-Item .\deployment.Parameters.clean.json $parameterFile
+
+#Read in Variables
+$params = Get-Content -Path $parameterFile -Raw | ConvertFrom-Json 
+
+$subscriptionID = $params.parameters.deploymentParameters.value.subscriptionid
+$imageResourceGroup = $params.parameters.deploymentParameters.value.ImageBuilderResourceGroup
+$location = $params.parameters.deploymentParameters.value.location
+$ImageBuilderManagedIdentityName = $params.parameters.deploymentParameters.value.ImageBuilderManagedIdentityName
+$imageRoleDefName = $params.parameters.deploymentParameters.value.ImageBuilderRoleDefintionName
+$galleryName = $params.parameters.deploymentParameters.value.galleryName
+$galleryImageDefinition = $params.parameters.deploymentParameters.value.galleryImageDefinitionName
+$imageTemplateName = $params.parameters.deploymentParameters.value.imageTemplateName
+$storageAccountName = $params.parameters.deploymentParameters.value.artifactsStorageAccountName
+$containerName = $params.parameters.deploymentParameters.value.artifactsContainerName
+$blobName = $params.parameters.deploymentParameters.value.AIBScriptBlobName
 
 ## Check AZ is installed
 try{
@@ -15,6 +32,10 @@ try{
   catch{
     Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi; Start-Process msiexec.exe -Wait -ArgumentList '/I AzureCLI.msi /quiet'
   }
+
+## Connect to Azure
+az login
+az account set --subscription $subscriptionID
 
 # Register for Azure Image Builder Feature
 az feature register --namespace Microsoft.VirtualMachineImages --name VirtualMachineTemplatePreview
@@ -42,7 +63,9 @@ $idenityNameResourceId = az identity show `
                          --name $ImageBuilderManagedIdentityName `
                          --query id `
                          --output tsv
-
+                         
+# Fix up the json parameters
+((Get-Content -path $parameterFile -Raw) -replace '"userAssignedIdentities":""', $('"userAssignedIdentities":"' + $idenityNameResourceId + '"')) | Set-Content -Path $parameterFile
 
 $idenityNamePrincipalId = az identity show `
                           --resource-group $imageResourceGroup  `
@@ -71,14 +94,12 @@ $resourceID = az group show --name $imageResourceGroup --query id --output tsv
  # grant role definition to image builder service principal
  az role assignment create --role $imageRoleDefName --assignee-object-id $idenityNamePrincipalId --scope $resourceID
 
-<<<<<<< HEAD
+
 # Get Infrastructure Dir
 $dir = Get-Location | Split-Path
 $infraDir = $dir + '\Infrastructure' 
 
- # Create Image Gallery
-$parameterFile = '.\deployment.Parameters.json'
-
+#Create Shared Image Gallery 
 az deployment group create `
               --resource-group $imageResourceGroup `
               --name (New-Guid).Guid `
@@ -87,10 +108,6 @@ az deployment group create `
 
 
 
-=======
-
-
->>>>>>> 5c058db6981a991b35f44ed8f788de4b64cbaa18
 $galleryImageId = az sig image-definition show `
                --resource-group $imageResourceGroup `
                --gallery-name $galleryName `
@@ -98,14 +115,15 @@ $galleryImageId = az sig image-definition show `
                --query id `
                --output tsv
 
-## Upload AIBWin10MSImageBuild.ps1 to a storage account and get bloburl
-<<<<<<< HEAD
+ # Fix up the json parameters
+((Get-Content -path $parameterFile -Raw) -replace '"galleryImageId":""', $('"galleryImageId":"' + $galleryImageId + '"')) | Set-Content -Path $parameterFile
 
-# upload script 
-
-$storageAccountName = ''
-$containerName = ''
-$blobName = = 'AIBWin10MSImageBuild.ps1'
+# Create Storage Account
+az deployment group create `
+              --resource-group $imageResourceGroup `
+              --name (New-Guid).Guid `
+              --template-file $infraDir\StorageAccount.Artifacts.json `
+              --parameters $parameterFile
 
   ## upload artifacts to blob storage
   $artifactsStorageKey = az storage account keys list `
@@ -113,7 +131,7 @@ $blobName = = 'AIBWin10MSImageBuild.ps1'
                        --query [0].value `
                        --output tsv
 
-  $SasToken =                    az storage container generate-sas `
+  $SasToken =               az storage container generate-sas `
                             --account-name $storageAccountName `
                             --name $containerName `
                             --account-key $artifactsStorageKey `
@@ -125,29 +143,27 @@ $connectionString = az storage account show-connection-string `
                     --resource-group $resourceGroupName `
                      --name $storageAccountName `
                      --output tsv
-                     
+      
+# Get StorageArtifacts
+$dir = Get-Location | Split-Path
+$StorageArtifactsDir = $dir + '\StorageArtifacts' 
+
+foreach($artifactToUpload in $(Get-ChildItem -Path $StorageArtifactsDir -Recurse -File)){ 
+
+  ## upload artifacts to blob storage
   az storage blob upload `
-                        --name $blobName `
-                        --container-name $containerName  `
-                        --file $blobName `
-                        --account-name $storageAccountName `
+                        --name $artifactToUpload.name `
+                        --container-name ($params.parameters.deploymentParameters.value.artifactsContainerName).ToLower() `
+                        --file $artifactToUpload.Fullname `
+                        --account-name ($artifactsStorageAccount | ConvertFrom-Json).properties.Outputs.storageAccountName.value `
                         --connection-string $connectionString `
                         --sas-token $SasToken 
+                        
+}
 
 
-=======
-# 1) Create Storage Account
-# 2) Upload script 
-# get blob:
-$storageAccountName = ''
-$containerName = ''
-$blobName = = 'AIBWin10MSImageBuild.ps1'
->>>>>>> 5c058db6981a991b35f44ed8f788de4b64cbaa18
 $date = (Get-Date).AddMinutes(90).ToString("yyyy-MM-dTH:mZ")
 $date = $date.Replace(".",":")
-
-
-
 $AIBScriptBlobPath =          az storage blob generate-sas `
                             --account-name $storageAccountName `
                             --container-name $containerName `
@@ -158,42 +174,21 @@ $AIBScriptBlobPath =          az storage blob generate-sas `
                             --full-uri `
                             --output tsv
 
-write-output "AIBScriptBlobPath : $AIBScriptBlobPath"
+# Set Parameter
+((Get-Content -path $parameterFile -Raw) -replace '"AIBScriptBlobPath":""', $('"AIBScriptBlobPath":"' + $AIBScriptBlobPath + '"')) | Set-Content -Path $parameterFile
 
 
-#Create Image Template
-az image builder create `
- -resource-group $imageResourceGroup `
- --name $imageTemplateName `
- --image-template .\armTemplateWinSIG.json
 
- # Submit Image Template
+#Submit Image Template
+az deployment group create `
+              --resource-group $imageResourceGroup `
+              --name (New-Guid).Guid `
+              --template-file .\armTemplateWinSIG.json `
+              --parameters $parameterFile
+
+# Build and Distribute Image 
  az image builder wait `
    --name $imageTemplateName `
    -resource-group $imageResourceGroup `
    --custom "lastRunStatus.runState!='running'"
 
-###
-# Get Status of the Image Build and Query
-# As there are currently no specific Azure PowerShell cmdlets for image builder, we need to construct API calls, with the authentication, this is just an example, note, you can use existing alternatives you may have.
-
-### Step 1: Update context
-$currentAzureContext = Get-AzContext
-
-### Step 2: Get instance profile
-$azureRmProfile = [Microsoft.Azure.Commands.Common.Authentication.Abstractions.AzureRmProfileProvider]::Instance.Profile
-$profileClient = New-Object Microsoft.Azure.Commands.ResourceManager.Common.RMProfileClient($azureRmProfile)
-    
-Write-Verbose ("Tenant: {0}" -f  $currentAzureContext.Subscription.Name)
- 
-### Step 4: Get token  
-$token = $profileClient.AcquireAccessToken($currentAzureContext.Tenant.TenantId)
-$accessToken=$token.AccessToken
-
-$managementEp = $currentAzureContext.Environment.ResourceManagerUrl
-
-$urlBuildStatus = [System.String]::Format("{0}subscriptions/{1}/resourceGroups/$imageResourceGroup/providers/Microsoft.VirtualMachineImages/imageTemplates/{2}?api-version=2019-05-01-preview", $managementEp, $currentAzureContext.Subscription.Id,$imageTemplateName)
-
-$buildStatusResult = Invoke-WebRequest -Method GET  -Uri $urlBuildStatus -UseBasicParsing -Headers  @{"Authorization"= ("Bearer " + $accessToken)} -ContentType application/json 
-$buildJsonStatus =$buildStatusResult.Content
-$buildJsonStatus
