@@ -77,7 +77,7 @@ $dir = Get-Location | Split-Path
 $infraDir = $dir + '\Infrastructure' 
 
  # Create Image Gallery
-$parameterFile = '.\deployment.Parameters.json' 
+$parameterFile = '.\deployment.Parameters.json'
 
 az deployment group create `
               --resource-group $imageResourceGroup `
@@ -88,13 +88,6 @@ az deployment group create `
 
 
 =======
- # Create Image Gallery
-$parameterFile = '.\deployment.Parameters.json' 
-az deployment group create `
-              --resource-group $imageResourceGroup `
-              --name (New-Guid).Guid `
-              --template-file .\SharedImageGallery.json `
-              --parameters $parameterFile
 
 
 >>>>>>> 5c058db6981a991b35f44ed8f788de4b64cbaa18
@@ -107,13 +100,6 @@ $galleryImageId = az sig image-definition show `
 
 ## Upload AIBWin10MSImageBuild.ps1 to a storage account and get bloburl
 <<<<<<< HEAD
-
-az deployment group create `
-              --resource-group $imageResourceGroup `
-              --name (New-Guid).Guid `
-              --template-file $infraDir\SharedImageGallery.json `
-              --parameters $parameterFile
-
 
 # upload script 
 
@@ -160,10 +146,7 @@ $blobName = = 'AIBWin10MSImageBuild.ps1'
 $date = (Get-Date).AddMinutes(90).ToString("yyyy-MM-dTH:mZ")
 $date = $date.Replace(".",":")
 
-$artifactsStorageKey = az storage account keys list `
-                       --account-name $storageAccountName `
-                       --query [0].value `
-                       --output tsv
+
 
 $AIBScriptBlobPath =          az storage blob generate-sas `
                             --account-name $storageAccountName `
