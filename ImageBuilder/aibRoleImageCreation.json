@@ -1,5 +1,5 @@
 {
-    "Name": "AUWVDImageBuilderRoleDefinition",
+    "Name": "WVDImageBuilderRoleDefinition",
     "IsCustom": true,
     "Description": "Image Builder access to create resources for the image build, you should delete or split out as appropriate",
     "Actions": [
@@ -16,9 +16,11 @@
   
     ],
     "AssignableScopes": [
-      "/subscriptions/8fc359b8-cb57-4af8-ab59-60f7506301c9/resourceGroups/AUImageBuilder"
+      "/subscriptions/8fc359b8-cb57-4af8-ab59-60f7506301c9/resourceGroups/WVDImageBuilder"
     ]
   }
+
+
 
 
 

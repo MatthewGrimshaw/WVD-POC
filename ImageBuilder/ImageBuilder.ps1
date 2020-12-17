@@ -30,7 +30,7 @@ try{
     az upgrade --all --yes
   }
   catch{
-    Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi; Start-Process msiexec.exe -Wait -ArgumentList '/I AzureCLI.msi /quiet'
+    Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi; Start-Process msiexec.exe -Wait -ArgumentList '/I AzureCLI.msi'
   }
 
 ## Connect to Azure
@@ -125,6 +125,11 @@ az deployment group create `
               --template-file $infraDir\StorageAccount.Artifacts.json `
               --parameters $parameterFile
 
+$storageAccountName = az storage account list `
+                      --resource-group $imageResourceGroup `
+                      --query [0].'name' `
+                      --output tsv    
+
   ## upload artifacts to blob storage
   $artifactsStorageKey = az storage account keys list `
                        --account-name $storageAccountName `
@@ -140,7 +145,7 @@ az deployment group create `
 
     
 $connectionString = az storage account show-connection-string `
-                    --resource-group $resourceGroupName `
+                    --resource-group $imageResourceGroup `
                      --name $storageAccountName `
                      --output tsv
       
@@ -153,9 +158,9 @@ foreach($artifactToUpload in $(Get-ChildItem -Path $StorageArtifactsDir -Recurse
   ## upload artifacts to blob storage
   az storage blob upload `
                         --name $artifactToUpload.name `
-                        --container-name ($params.parameters.deploymentParameters.value.artifactsContainerName).ToLower() `
+                        --container-name $containerName.ToLower() `
                         --file $artifactToUpload.Fullname `
-                        --account-name ($artifactsStorageAccount | ConvertFrom-Json).properties.Outputs.storageAccountName.value `
+                        --account-name $storageAccountName `
                         --connection-string $connectionString `
                         --sas-token $SasToken 
                         
@@ -166,7 +171,7 @@ $date = (Get-Date).AddMinutes(90).ToString("yyyy-MM-dTH:mZ")
 $date = $date.Replace(".",":")
 $AIBScriptBlobPath =          az storage blob generate-sas `
                             --account-name $storageAccountName `
-                            --container-name $containerName `
+                            --container-name $containerName.ToLower() `
                             --name $blobName  `
                             --account-key $artifactsStorageKey `
                             --permissions rw `
@@ -186,9 +191,20 @@ az deployment group create `
               --template-file .\armTemplateWinSIG.json `
               --parameters $parameterFile
 
-# Build and Distribute Image 
+# Build and Distribute Image
+az image builder run `
+--name $imageTemplateName `
+--resource-group $imageResourceGroup `
+--no-wait
+
+# This can take a bit of time
  az image builder wait `
    --name $imageTemplateName `
-   -resource-group $imageResourceGroup `
-   --custom "lastRunStatus.runState!='running'"
+   --resource-group $imageResourceGroup `
+   --custom "lastRunStatus.runState!='Running'"
 
+az image builder show `
+ --name $imageTemplateName `
+ --resource-group $imageResourceGroup
+
+# az image builder delete --name $imageTemplateName --resource-group $imageResourceGroup

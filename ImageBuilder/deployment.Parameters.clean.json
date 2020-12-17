@@ -4,7 +4,7 @@
   "parameters": {
     "deploymentParameters": {
       "value": {   
-      "subscriptionid" : "8fc359b8-cb57-4af8-ab59-60f7506301c9",
+      "subscriptionid" : "<>",
       "location":  "westeurope",
       "artifactsStorageAccountType": "Standard_LRS",
       "artifactsStorageAccountName": "wvdartifacts",
@@ -26,7 +26,8 @@
       "offer": "windows-10",
       "sku": "20h1-evd",
       "version": "latest",
-      "AIBScriptBlobPath":""      
+      "AIBScriptBlobPath":"", 
+      "AIBScriptBlobName":"AIBWin10MSImageBuild.ps1"      
       }
     }    
   }
