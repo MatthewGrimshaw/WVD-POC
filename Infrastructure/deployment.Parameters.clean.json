@@ -1,0 +1,22 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "deploymentParameters": {
+      "value": {   
+          "subscriptionid" : "<>",
+          "tenantID":"",
+          "objectId":"",
+          "keyVaultSubscriptionID": "<>",
+          "keyVaultResourceGroupName":"WVD-KeyVault",
+          "keyVaultUser":"<>",
+          "location":  "westeurope",
+          "keyVaultName":"wvdKeyVault",
+          "wvdHostResourceGroupName":"WVD-Hosts",
+          "artifactsStorageAccountType": "Standard_LRS",
+          "artifactsStorageAccountName": "wvdartifacts",
+          "artifactsContainerName": "wvdArtifactsContainer"          
+      }
+    }    
+  }
+}

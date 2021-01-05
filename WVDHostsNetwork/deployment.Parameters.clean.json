@@ -1,0 +1,46 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "deploymentParameters": {
+      "value": {   
+          "subscriptionid" : "<>",
+          "fwSubscriptionid": "<>",
+          "wvdHostResourceGroupName":"WVD-Hosts",          
+          "wvdResourceGroupName":"wvd",
+          "location":  "westeurope",
+          "routeTableName":"WVDRouteTable",
+          "defaultInternetRoute":"0.0.0.0/0",
+          "ADSubnet":"10.0.0.0/24",
+          "NvmPrivateIPAddress":"10.2.1.4",
+          "count":3,
+          "wvdNSGName":"WVD_NSG",
+          "vnetName":"WVDVNet",
+          "vnetAddress":"10.60.0.0/26",
+          "dnsServers":"10.0.0.7",
+          "subnetName":"WVDSubnet",
+          "subnetAddress":"10.60.0.0/28",
+          "AzfwVnetName":"<>",
+          "AzfwResourceGroup":"<>",
+          "AzfwName":"<>",
+          "AzfwCollectionName":"<>",  
+          "hubSubnetResourceID":"<>",
+          "securityRules": [ 
+            {
+              "name": "default-allow-3389",
+              "description": "Allow RDP",
+              "priority": 1000,
+              "access": "Allow",
+              "direction": "Inbound",
+              "destinationPortRange": "3389",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*"            
+            } 
+        ],
+        "deployIsolatedHosts":false      
+      }
+    }    
+  }
+}

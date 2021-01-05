@@ -1,0 +1,195 @@
+
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "deploymentParameters": {
+            "type": "object",
+            "metadata": {
+                "description": "Deployment Parameters"
+            }
+        },
+        "localAdminAccountUserName": {
+            "type": "string"
+        },
+        "localAdminAccountPassword": {
+            "type": "securestring"
+        },
+        "domainJoinAccount": {
+            "type": "string"
+        },
+        "domainJoinPassword": {
+            "type": "securestring"
+        }
+    },
+
+    "variables": {
+        "copy": [
+            {
+                "name": "securityRules",
+                "count": "[length(parameters('deploymentParameters').securityRules)]",
+                "input": {
+                    "name": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].name]",
+                    "properties": {
+                        "description": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].description]",
+                        "priority": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].priority]",
+                        "protocol": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].protocol]",
+                        "sourcePortRange": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].sourcePortRange]",
+                        "destinationPortRange": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].destinationPortRange]",
+                        "sourceAddressPrefix": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].sourceAddressPrefix]",
+                        "destinationAddressPrefix": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].destinationAddressPrefix]",
+                        "access": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].access]",
+                        "direction": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].direction]"
+                    }
+                }
+            }
+        ]
+    },
+    "resources": [
+        {
+            "apiVersion": "2017-06-01",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[concat('vmNSG_', parameters('deploymentParameters').wvdNSGName,copyIndex())]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "securityRules": "[variables('securityRules')]"
+            },
+            "copy": {
+                "name": "NSGCopy",
+                "count": "[parameters('deploymentParameters').count]"
+            }
+        },
+        {
+            "apiVersion": "2018-11-01",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[concat(parameters('deploymentParameters').vmPrefix, copyIndex(), '-nic')]",
+            "location": "[parameters('deploymentParameters').location]",
+            "tags": "[parameters('deploymentParameters').networkInterfaceTags]",
+            "copy": {
+                "name": "rdsh-nic-loop",
+                "count": "[parameters('deploymentParameters').count]"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[concat(parameters('deploymentParameters').resourceIdPrefix, 'Microsoft.Network/virtualNetworks/', parameters('deploymentParameters').vnetName, copyIndex(),'/subnets/', parameters('deploymentParameters').subnetName, copyIndex())]"
+                            }
+                        }
+                    }
+                ],
+                "enableAcceleratedNetworking": "[parameters('deploymentParameters').enableAcceleratedNetworking]",
+                "networkSecurityGroup": {
+                    "id": "[concat(parameters('deploymentParameters').resourceIdPrefix,'Microsoft.Network/networkSecurityGroups/','vmNSG_', parameters('deploymentParameters').wvdNSGName,copyIndex())]"
+                }
+            },
+            "dependsOn": [
+                "NSGCopy"
+            ]
+        },
+        {
+            "apiVersion": "2018-10-01",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[concat(parameters('deploymentParameters').vmPrefix, copyIndex(), '-VM')]",
+            "location": "[parameters('deploymentParameters').location]",
+            "tags": "[parameters('deploymentParameters').virtualMachineTags]",
+            "copy": {
+                "name": "rdsh-vm-loop",
+                "count": "[parameters('deploymentParameters').count]"
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('deploymentParameters').vmPrefix, copyIndex(), '-nic')]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('deploymentParameters').vmSize]"
+                },
+                "osProfile": {
+                    "computerName": "[concat(parameters('deploymentParameters').vmPrefix, copyIndex(), '-VM')]",
+                    "adminUsername": "[parameters('localAdminAccountUserName')]",
+                    "adminPassword": "[parameters('localAdminAccountPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "id": "[resourceId('Microsoft.Compute/galleries/images/versions', parameters('deploymentParameters').galleryName, parameters('deploymentParameters').galleryImageDefinitionName, parameters('deploymentParameters').galleryImageVersionName)]"
+                    },
+                    "osDisk": {
+                        "name": "[concat(parameters('deploymentParameters').vmPrefix, copyIndex(), '-OS')]",
+                        "createOption": "FromImage",
+                        "diskSizeGB": "[parameters('deploymentParameters').osDiskSizeGB]",
+                        "caching": "ReadWrite"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', concat(parameters('deploymentParameters').vmPrefix, copyIndex(), '-nic'))]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": false
+                    }
+                },
+                "licenseType": "Windows_Client"
+            }
+        },
+        {
+            "apiVersion": "2018-10-01",
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(parameters('deploymentParameters').vmPrefix, copyIndex(), '-VM', '/', 'joindomain')]",
+            "location": "[parameters('deploymentParameters').location]",
+            "dependsOn": [ "rdsh-vm-loop" ],
+            "copy": {
+                "name": "rdsh-domain-join-loop",
+                "count": "[parameters('deploymentParameters').count]"
+            },
+            "properties": {
+                "publisher": "Microsoft.Compute",
+                "type": "JsonADDomainExtension",
+                "typeHandlerVersion": "1.3",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "name": "[parameters('deploymentParameters').domain]",
+                    "ouPath": "[parameters('deploymentParameters').ouPath]",
+                    "user": "[parameters('domainJoinAccount')]",
+                    "restart": "true",
+                    "options": "3"
+                },
+                "protectedSettings": {
+                    "password": "[parameters('domainJoinPassword')]"
+                }
+            }
+        },
+        {
+            "apiVersion": "2018-10-01",
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(parameters('deploymentParameters').vmPrefix, copyIndex(), '-VM', '/', 'dscextension')]",
+            "location": "[parameters('deploymentParameters').location]",
+            "dependsOn": [ "rdsh-domain-join-loop" ],
+            "copy": {
+                "name": "rdsh-dsc-loop",
+                "count": "[parameters('deploymentParameters').count]"
+            },
+            "properties": {
+                "publisher": "Microsoft.Powershell",
+                "type": "DSC",
+                "typeHandlerVersion": "2.73",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "modulesUrl": "[parameters('deploymentParameters').dscArtifactsLocation]",
+                    "configurationFunction": "Configuration.ps1\\AddSessionHost",
+                    "properties": {
+                        "hostPoolName": "[parameters('deploymentParameters').hostPoolName]",
+                        "registrationInfoToken": "[parameters('deploymentParameters').registrationInfoToken]"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}

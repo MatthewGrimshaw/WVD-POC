@@ -1,0 +1,92 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "deploymentParameters": {
+      "value": {
+        "subscriptionid": "<>",
+        "wvdHostResourceGroupName": "WVD-Hosts",
+        "wvdResourceGroupName": "wvd",
+        "keyVaultName": "<>",
+        "location": "westeurope",
+        "ImageBuilderResourceGroup": "WVDImageBuilder",
+        "domain": "<>",
+        "ouPath": "<>",
+        "dscArtifactsName": "Configuration.zip",
+        "dscArtifactsLocation": "<>",
+        "registrationInfoToken":"",
+        "hostPoolName": "SecureVMHosts",
+        "deployIsolatedHosts": false,
+        "artifactsContainerName": "wvdArtifactsContainer",
+        "resourceIdPrefix": "<>",
+        "subnetName": "WVDSubnet",
+        "vnetName": "WVDVNet",
+        "count": 3,
+        "wvdNSGName": "WVD_NSG",
+        "vmPrefix": "wvdHost",
+        "networkInterfaceTags": {
+          "Tag1": "Value1",
+          "Tag2": "Value2"
+        },
+        "virtualMachineTags": {
+          "Tag1": "Value1",
+          "Tag2": "Value2"
+        },
+        "enableAcceleratedNetworking": "false",
+        "vmSize": "Standard_D1_v2",
+        "osDiskSizeGB": 127,
+        "osVMDiskType": "Premium_LRS",
+        "galleryName": "wvdImageGallery",
+        "galleryImageDefinitionName": "Windows10MultiUser",
+        "galleryImageId": "<>",
+        "galleryImageVersionName": "latest",
+        "securityRules": [
+          {
+            "name": "default-allow-3389",
+            "description": "Allow RDP",
+            "priority": 1000,
+            "access": "Allow",
+            "direction": "Inbound",
+            "destinationPortRange": "3389",
+            "protocol": "Tcp",
+            "sourcePortRange": "*",
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "*"
+          }
+        ]
+      }
+    },
+    "localAdminAccountUserName": {
+      "reference": {
+        "keyVault": {
+          "id": "<>"
+        },
+        "secretName": "localAdminAccountName"
+      }
+    },
+    "localAdminAccountPassword": {
+      "reference": {
+        "keyVault": {
+          "id": "<>"
+        },
+        "secretName": "localAdminAccountPassword"
+      }
+    },
+    "domainJoinAccount": {
+      "reference": {
+        "keyVault": {
+          "id": "<>"
+        },
+        "secretName": "domainJoinAccount"
+      }
+    },
+    "domainJoinPassword": {
+      "reference": {
+        "keyVault": {
+          "id": "<>"
+        },
+        "secretName": "domainJoinPassword"
+      }
+    }
+  }
+}

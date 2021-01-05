@@ -1,0 +1,123 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+        "deploymentParameters": {
+            "type": "object",
+            "metadata": {
+                "description": "Deployment Parameters"
+            }
+        }
+    },
+  "variables": {
+    "copy": [
+      {
+        "name": "securityRules",
+        "count": "[length(parameters('deploymentParameters').securityRules)]",
+        "input": {
+          "name": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].name]",
+          "properties": {
+            "description": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].description]",
+            "priority": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].priority]",
+            "protocol": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].protocol]",
+            "sourcePortRange": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].sourcePortRange]",
+            "destinationPortRange": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].destinationPortRange]",
+            "sourceAddressPrefix": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].sourceAddressPrefix]",
+            "destinationAddressPrefix": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].destinationAddressPrefix]",
+            "access": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].access]",
+            "direction": "[parameters('deploymentParameters').securityRules[copyIndex('securityRules')].direction]"
+          }
+        }
+      }
+    ]
+
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/routeTables",
+      "name": "[concat(parameters('deploymentParameters').routeTableName,copyIndex())]",
+      "apiVersion": "2015-06-15",
+      "location": "[parameters('deploymentParameters').location]",
+      "properties": {
+        "routes": [
+          {
+            "name": "VirtualApplianceRouteToSubnet3",
+            "properties": {
+              "addressPrefix": "[parameters('deploymentParameters').defaultInternetRoute]",
+              "nextHopType": "VirtualAppliance",
+              "nextHopIpAddress": "[parameters('deploymentParameters').NvmPrivateIPAddress]"
+            }
+          }
+        ]
+      },
+      "copy": {
+        "name": "routeTableCopy",
+        "count": "[parameters('deploymentParameters').count]"
+      }
+    },
+    {
+      "apiVersion": "2017-06-01",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[concat(parameters('deploymentParameters').wvdNSGName,copyIndex())]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "securityRules": "[variables('securityRules')]"
+      },
+      "copy": {
+        "name": "NSGCopy",
+        "count": "[parameters('deploymentParameters').count]"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2020-05-01",
+      "name": "[concat(parameters('deploymentParameters').vnetName,copyIndex())]",
+      "location": "[parameters('deploymentParameters').location]",
+      "dependsOn": [ "routeTableCopy", "NSGCopy" ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[concat(parameters('deploymentParameters').vnetAddressPrefix,copyIndex('vnetcopy',parameters('deploymentParameters').netStartInteger),parameters('deploymentParameters').vnetAddressSuffix)]"
+          ]
+        },
+        "dhcpOptions": {
+          "dnsServers": [
+            "[parameters('deploymentParameters').dnsServers]"
+          ]
+        }
+      },
+      "resources": [
+        {
+          "type": "subnets",
+          "apiVersion": "2020-05-01",
+          "location": "[parameters('deploymentParameters').location]",
+          "name": "[concat(parameters('deploymentParameters').subnetName,copyIndex())]",
+          "dependsOn": [
+            "[concat(parameters('deploymentParameters').vnetName,copyIndex())]"
+          ],
+          "properties": {
+            "addressPrefix": "[concat(parameters('deploymentParameters').subnetPrefix,copyIndex('vnetcopy',parameters('deploymentParameters').netStartInteger),parameters('deploymentParameters').subnetSuffix)]",
+            "routeTable": {
+              "id": "[resourceId('Microsoft.Network/routeTables', concat(parameters('deploymentParameters').routeTableName,copyIndex()))]"
+            },
+            "networkSecurityGroup": {
+              "id": "[resourceId('Microsoft.Network/networkSecurityGroups', concat(parameters('deploymentParameters').wvdNSGName,copyIndex()))]"
+            },
+            "serviceEndpoints": [
+              {
+                "service": "Microsoft.Storage"
+              },
+              {
+                "service": "Microsoft.KeyVault"
+              }
+            ]
+          }
+        }
+      ],
+      "copy": {
+        "name": "vnetcopy",
+        "count": "[parameters('deploymentParameters').count]"
+      }
+    }
+  ]
+}

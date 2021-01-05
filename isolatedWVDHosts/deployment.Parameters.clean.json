@@ -1,0 +1,296 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "deploymentParameters": {
+      "value": {
+        "subscriptionid": "<>",
+        "wvdHostResourceGroupName": "secWVD-Hosts",
+        "wvdResourceGroupName": "wvd",
+        "keyVaultName": "wvdkeyvaultMatt",
+        "location": "westeurope",
+        "ImageBuilderResourceGroup": "WVDImageBuilder",
+        "domain": "<>",
+        "ouPath": "<>",
+        "dscArtifactsName": "Configuration.zip",
+        "dscArtifactsLocation":"",
+        "registrationInfoToken":"",
+        "hostPoolName": "SecureVMHosts",
+        "deployIsolatedHosts": true,
+        "artifactsContainerName": "wvdArtifactsContainer",
+        "resourceIdPrefix":"<>",
+        "subnetName": "secWVDSubnet",
+        "vnetName": "secWVDVNet",
+        "count": 3,
+        "wvdNSGName": "secWVD_NSG",
+        "vmPrefix": "secwvdHost",
+        "networkInterfaceTags": {
+          "Tag1": "Value1",
+          "Tag2": "Value2"
+        },
+        "virtualMachineTags": {
+          "Tag1": "Value1",
+          "Tag2": "Value2"
+        },
+        "enableAcceleratedNetworking": "false",
+        "vmSize": "Standard_D1_v2",
+        "osDiskSizeGB": 127,
+        "osVMDiskType": "Premium_LRS",
+        "galleryName": "wvdImageGallery",
+        "galleryImageDefinitionName": "Windows10MultiUser",
+        "galleryImageId": "<>",
+        "galleryImageVersionName": "latest",
+        "securityRules": [
+          {
+            "name": "RPCEndpointMapper",
+            "description": "RPC Endpoint Mapper",
+            "direction": "Outbound",
+            "priority": 100,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "10.0.0.0/24",
+            "sourcePortRange": "*",
+            "destinationPortRange": "135",
+            "access": "Allow",
+            "protocol": "Tcp"
+          },
+          {
+            "name": "RPC",
+            "description": "RPC",
+            "direction": "Outbound",
+            "priority": 101,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "10.0.0.0/24",
+            "sourcePortRange": "*",
+            "destinationPortRange": "1024-65535",
+            "access": "Allow",
+            "protocol": "Tcp"
+          },
+          {
+            "name": "LDAP",
+            "description": "allow LDAP outgoing connections",
+            "direction": "Outbound",
+            "priority": 102,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "10.0.0.0/24",
+            "sourcePortRange": "*",
+            "destinationPortRange": "389",
+            "access": "Allow",
+            "protocol": "*"
+          },
+          {
+            "name": "LDAPGC",
+            "description": "Directory, Replication, User and Computer Authentication, Group Policy, Trusts",
+            "direction": "Outbound",
+            "priority": 104,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "10.0.0.0/24",
+            "sourcePortRange": "*",
+            "destinationPortRange": "3268",
+            "access": "Allow",
+            "protocol": "Tcp"
+          },
+          {
+            "name": "DNS",
+            "description": "Active Directory DNS",
+            "direction": "Outbound",
+            "priority": 105,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "10.0.0.0/24",
+            "sourcePortRange": "*",
+            "destinationPortRange": "53",
+            "access": "Allow",
+            "protocol": "*"
+          },
+          {
+            "name": "AzureDNS1",
+            "description": "AzureDNS",
+            "direction": "Outbound",
+            "priority": 106,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "168.63.129.16",
+            "sourcePortRange": "*",
+            "destinationPortRange": "53",
+            "access": "Allow",
+            "protocol": "*"
+          },
+          {
+            "name": "AzureDNS2",
+            "description": "AzureDNS2",
+            "direction": "Outbound",
+            "priority": 107,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "169.254.169.254",
+            "sourcePortRange": "*",
+            "destinationPortRange": "53",
+            "access": "Allow",
+            "protocol": "*"
+          },
+          {
+            "name": "Kerberos",
+            "description": "Kerberos",
+            "direction": "Outbound",
+            "priority": 108,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "10.0.0.0/24",
+            "sourcePortRange": "*",
+            "destinationPortRange": "88",
+            "access": "Allow",
+            "protocol": "*"
+          },
+          {
+            "name": "SMB",
+            "description": "Directory, Replication, User and Computer Authentication, Group Policy, Trusts",
+            "direction": "Outbound",
+            "priority": 109,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "10.0.0.0/24",
+            "sourcePortRange": "*",
+            "destinationPortRange": "445",
+            "access": "Allow",
+            "protocol": "*"
+          },
+          {
+            "name": "TimeService",
+            "description": "W32Time",
+            "direction": "Outbound",
+            "priority": 110,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "*",
+            "sourcePortRange": "*",
+            "destinationPortRange": "123",
+            "access": "Allow",
+            "protocol": "Udp"
+          },
+          {
+            "name": "KerberosPasswordChange",
+            "description": "Kerberos password change",
+            "direction": "Outbound",
+            "priority": 111,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "10.0.0.0/24",
+            "sourcePortRange": "*",
+            "destinationPortRange": "464",
+            "access": "Allow",
+            "protocol": "Tcp"
+          },
+          {
+            "name": "HTTPAllow80",
+            "description": "allow HTTP connections",
+            "direction": "Outbound",
+            "priority": 200,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "10.2.1.0/26",
+            "sourcePortRange": "*",
+            "destinationPortRange": "80",
+            "access": "Allow",
+            "protocol": "Tcp"
+          },
+          {
+            "name": "HTTPAllow443",
+            "description": "allow HTTP connections",
+            "direction": "Outbound",
+            "priority": 201,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "10.2.1.0/26",
+            "sourcePortRange": "*",
+            "destinationPortRange": "443",
+            "access": "Allow",
+            "protocol": "Tcp"
+          },
+          {
+            "name": "WindowsActivation",
+            "description": "allow HTTP connections",
+            "direction": "Outbound",
+            "priority": 300,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "10.2.1.0/26",
+            "sourcePortRange": "*",
+            "destinationPortRange": "1688",
+            "access": "Allow",
+            "protocol": "Tcp"
+          },
+          {
+            "name": "WindowsVirtualDesktop",
+            "description": "Windows Virtual Desktop",
+            "direction": "Outbound",
+            "priority": 310,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "WindowsVirtualDesktop",
+            "sourcePortRange": "*",
+            "destinationPortRange": "*",
+            "access": "Allow",
+            "protocol": "*"
+          },
+          {
+            "name": "Storage",
+            "description": "allow Storage connections",
+            "direction": "Outbound",
+            "priority": 400,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "Storage",
+            "sourcePortRange": "*",
+            "destinationPortRange": "*",
+            "access": "Allow",
+            "protocol": "Tcp"
+          },
+          {
+            "name": "KeyVault",
+            "description": "allow Storage connections",
+            "direction": "Outbound",
+            "priority": 401,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "AzureKeyVault",
+            "sourcePortRange": "*",
+            "destinationPortRange": "*",
+            "access": "Allow",
+            "protocol": "Tcp"
+          },
+          {
+            "name": "DenyOutbound",
+            "description": "DenyOutbound",
+            "direction": "Outbound",
+            "priority": 402,
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "*",
+            "sourcePortRange": "*",
+            "destinationPortRange": "*",
+            "access": "Deny",
+            "protocol": "*"
+          }
+        ]
+      }
+    },
+    "localAdminAccountUserName": {
+      "reference": {
+        "keyVault": {
+          "id":""
+        },
+        "secretName": "localAdminAccountName"
+      }
+    },
+    "localAdminAccountPassword": {
+      "reference": {
+        "keyVault": {
+          "id":""
+        },
+        "secretName": "localAdminAccountPassword"
+      }
+    },
+    "domainJoinAccount": {
+      "reference": {
+        "keyVault": {
+          "id":""
+        },
+        "secretName": "domainJoinAccount"
+      }
+    },
+    "domainJoinPassword": {
+      "reference": {
+        "keyVault": {
+          "id":""
+        },
+        "secretName": "domainJoinPassword"
+      }
+    }
+  }
+}
