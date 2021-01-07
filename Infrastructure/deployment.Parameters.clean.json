@@ -15,7 +15,12 @@
           "wvdHostResourceGroupName":"WVD-Hosts",
           "artifactsStorageAccountType": "Standard_LRS",
           "artifactsStorageAccountName": "wvdartifacts",
-          "artifactsContainerName": "wvdArtifactsContainer"          
+          "artifactsContainerName": "wvdArtifactsContainer",
+          "binariesContainerName":"binaries",
+          "ImageBuilderResourceGroup":"WVDImageBuilder",
+          "ImageBuilderManagedIdentityName":"ImanageBuildUserAssignedIdentity",
+          "ImageBuilderRoleDefintionName" : "WVDImageBuilderRoleDefinition",
+          "userAssignedIdentities":""       
       }
     }    
   }

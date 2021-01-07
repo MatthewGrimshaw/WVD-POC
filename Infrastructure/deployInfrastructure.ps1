@@ -19,6 +19,9 @@ $keyVaultUser = $params.parameters.deploymentParameters.value.keyVaultUser
 $wvdHostsResourceGroup = $params.parameters.deploymentParameters.value.wvdHostResourceGroupName
 $containerName = $params.parameters.deploymentParameters.value.artifactsContainerName
 $location = $params.parameters.deploymentParameters.value.location
+$imageResourceGroup = $params.parameters.deploymentParameters.value.ImageBuilderResourceGroup
+$ImageBuilderManagedIdentityName = $params.parameters.deploymentParameters.value.ImageBuilderManagedIdentityName
+$imageRoleDefName = $params.parameters.deploymentParameters.value.ImageBuilderRoleDefintionName
 
 $domainJoinAccount = 'dummyValue'
 $domainJoinPassword = 'dummyValue'
@@ -40,6 +43,15 @@ catch {
 ## Connect to Azure
 az login #--tenant "72f988bf-86f1-41af-91ab-2d7cd011db47"
 az account set --subscription $subscriptionID 
+
+# Register for Azure Image Builder Feature
+az feature register --namespace Microsoft.VirtualMachineImages --name VirtualMachineTemplatePreview
+
+# Register other providers
+az provider register --namespace Microsoft.VirtualMachineImages
+az provider register --namespace Microsoft.Storage
+az provider register --namespace Microsoft.Compute
+az provider register --namespace Microsoft.KeyVault
 
 # Create Key Vault
 
@@ -88,6 +100,64 @@ az keyvault secret set `
   --value $localAdminAccountPassword
 
 ## Please login into the Key Vault and manully update the secrets values with the correct information
+
+
+
+## Create Image Builder Resource Group
+az group create --location $location --name $imageResourceGroup
+
+# Create Managed Identity for the Image Gallery
+$AzUSerAssignedIdentity = az identity create `
+  --resource-group $imageResourceGroup  `
+  --name $ImageBuilderManagedIdentityName `
+  --output tsv
+
+
+# Get the Mangaged Identity
+$idenityNameResourceId = az identity show `
+  --resource-group $imageResourceGroup  `
+  --name $ImageBuilderManagedIdentityName `
+  --query id `
+  --output tsv
+                         
+# Fix up the json parameters
+((Get-Content -path $parameterFile -Raw) -replace '"userAssignedIdentities":""', $('"userAssignedIdentities":"' + $idenityNameResourceId + '"')) | Set-Content -Path $parameterFile
+
+$idenityNamePrincipalId = az identity show `
+  --resource-group $imageResourceGroup  `
+  --name $ImageBuilderManagedIdentityName `
+  --query principalId `
+  --output tsv
+
+# Taken from here: "https://raw.githubusercontent.com/danielsollondon/azvmimagebuilder/master/solutions/12_Creating_AIB_Security_Roles/aibRoleImageCreation.json"
+$aibRoleImageCreationPath = '.\aibRoleImageCreation.json'
+
+$regEx = '/subscriptions/[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}/resourceGroups/.*"'
+$regExRoleDefintionName = '"Name": ".*"'
+
+$resourceID = az group show --name $imageResourceGroup --query id --output tsv
+
+
+# Fix up the json role defintion
+((Get-Content -path $aibRoleImageCreationPath -Raw) -replace $regEx, $($resourceID + '"' )) | Set-Content -Path $aibRoleImageCreationPath
+((Get-Content -path $aibRoleImageCreationPath -Raw) -replace $regExRoleDefintionName, ('"Name": "' + $imageRoleDefName + '"' )) | Set-Content -Path $aibRoleImageCreationPath
+
+# create role definition
+az role definition create --role-definition @$aibRoleImageCreationPath
+
+# grant role definition to image builder service principal
+az role assignment create --role $imageRoleDefName --assignee-object-id $idenityNamePrincipalId --scope $resourceID
+
+# Get Infrastructure Dir
+$dir = Get-Location | Split-Path
+$infraDir = $dir + '\Infrastructure' 
+
+#Create Shared Image Gallery 
+az deployment group create `
+  --resource-group $imageResourceGroup `
+  --name (New-Guid).Guid `
+  --template-file $infraDir\SharedImageGallery.json `
+  --parameters $parameterFile
 
 
 # Create Storage Account and Upload Artifacts

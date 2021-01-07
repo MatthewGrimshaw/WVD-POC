@@ -34,6 +34,14 @@
                     "dependsOn": [
                         "[variables('artifactsStorageAccountName')]"
                     ]
+                },
+                {
+                    "type": "blobServices/containers",
+                    "apiVersion": "2019-06-01",
+                    "name": "[toLower(concat('default/', parameters('deploymentParameters').binariesContainerName))]",
+                    "dependsOn": [
+                        "[variables('artifactsStorageAccountName')]"
+                    ]
                 }
             ]
         }

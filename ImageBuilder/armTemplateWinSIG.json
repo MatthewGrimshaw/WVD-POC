@@ -48,11 +48,33 @@
                     "sku": "[parameters('deploymentParameters').sku]",
                     "version": "[parameters('deploymentParameters').version]"                
             },
-            "customize": [             
+            "customize": [                                
                     {
                         "type": "PowerShell",
                         "name": "CreateBuildPath",
                         "scriptUri": "[parameters('deploymentParameters').AIBScriptBlobPath]"
+                    },
+                    {
+                        "type": "File",
+                        "name": "downloadBuildArtifacts",
+                        "sourceUri": "[parameters('deploymentParameters').binariesUri]",
+                        "destination":"c:\\temp\\binaries.zip"
+                    },
+                    {
+                        "type": "PowerShell",
+                        "name": "UncompressBinaries",
+                        "runElevated": true,
+                        "inline":[
+                            "Expand-Archive -Path 'c:\\temp\\binaries.zip' -DestinationPath 'c:\\temp\\binaries\\' -force'"
+                        ]
+                    },
+                    {
+                        "type": "PowerShell",
+                        "name": "InstallPutty",
+                        "runElevated": true,
+                        "inline":[
+                            "msiexec /i c:\\temp\\binaries\\putty-64bit-0.74-installer.msi\\putty-64bit-0.74-installer.msi /qn"
+                        ]
                     },
                     {
                         "type": "WindowsRestart",

@@ -2,7 +2,9 @@
 
 
 #Create temp folder
-New-Item -Path 'C:\temp' -ItemType Directory -Force | Out-Null
+if(!(Test-Path 'c:\temp')){
+    New-Item -Path 'C:\temp' -ItemType Directory -Force | Out-Null
+}
 
 
 #Install VSCode

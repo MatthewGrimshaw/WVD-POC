@@ -15,13 +15,13 @@ $params = Get-Content -Path $parameterFile -Raw | ConvertFrom-Json
 $subscriptionID = $params.parameters.deploymentParameters.value.subscriptionid
 $imageResourceGroup = $params.parameters.deploymentParameters.value.ImageBuilderResourceGroup
 $location = $params.parameters.deploymentParameters.value.location
-$ImageBuilderManagedIdentityName = $params.parameters.deploymentParameters.value.ImageBuilderManagedIdentityName
 $imageRoleDefName = $params.parameters.deploymentParameters.value.ImageBuilderRoleDefintionName
 $galleryName = $params.parameters.deploymentParameters.value.galleryName
 $galleryImageDefinition = $params.parameters.deploymentParameters.value.galleryImageDefinitionName
 $imageTemplateName = $params.parameters.deploymentParameters.value.imageTemplateName
 $storageAccountName = $params.parameters.deploymentParameters.value.artifactsStorageAccountName
 $containerName = $params.parameters.deploymentParameters.value.artifactsContainerName
+$binariesContainerName = $params.parameters.deploymentParameters.value.binariesContainerName
 $blobName = $params.parameters.deploymentParameters.value.AIBScriptBlobName
 
 ## Check AZ is installed
@@ -37,25 +37,8 @@ catch {
 az login
 az account set --subscription $subscriptionID
 
-# Register for Azure Image Builder Feature
-az feature register --namespace Microsoft.VirtualMachineImages --name VirtualMachineTemplatePreview
-
-# Register other providers
-az provider register --namespace Microsoft.VirtualMachineImages
-az provider register --namespace Microsoft.Storage
-az provider register --namespace Microsoft.Compute
-az provider register --namespace Microsoft.KeyVault
-
-
 ## Create Image Builder Resource Group
 az group create --location $location --name $imageResourceGroup
-
-# Create Managed Identity for the Image Gallery
-$AzUSerAssignedIdentity = az identity create `
-  --resource-group $imageResourceGroup  `
-  --name $ImageBuilderManagedIdentityName `
-  --output tsv
-
 
 # Get the Mangaged Identity
 $idenityNameResourceId = az identity show `
@@ -67,46 +50,10 @@ $idenityNameResourceId = az identity show `
 # Fix up the json parameters
 ((Get-Content -path $parameterFile -Raw) -replace '"userAssignedIdentities":""', $('"userAssignedIdentities":"' + $idenityNameResourceId + '"')) | Set-Content -Path $parameterFile
 
-$idenityNamePrincipalId = az identity show `
-  --resource-group $imageResourceGroup  `
-  --name $ImageBuilderManagedIdentityName `
-  --query principalId `
-  --output tsv
-
-
-# Taken from here: "https://raw.githubusercontent.com/danielsollondon/azvmimagebuilder/master/solutions/12_Creating_AIB_Security_Roles/aibRoleImageCreation.json"
-$aibRoleImageCreationPath = '.\aibRoleImageCreation.json'
-
-$regEx = '/subscriptions/[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}/resourceGroups/.*"'
-$regExRoleDefintionName = '"Name": ".*"'
-
-
-$resourceID = az group show --name $imageResourceGroup --query id --output tsv
-
-
-# Fix up the json role defintion
-((Get-Content -path $aibRoleImageCreationPath -Raw) -replace $regEx, $($resourceID + '"' )) | Set-Content -Path $aibRoleImageCreationPath
-((Get-Content -path $aibRoleImageCreationPath -Raw) -replace $regExRoleDefintionName, ('"Name": "' + $imageRoleDefName + '"' )) | Set-Content -Path $aibRoleImageCreationPath
-
-# create role definition
-az role definition create --role-definition @$aibRoleImageCreationPath
-
-# grant role definition to image builder service principal
-az role assignment create --role $imageRoleDefName --assignee-object-id $idenityNamePrincipalId --scope $resourceID
-
 
 # Get Infrastructure Dir
 $dir = Get-Location | Split-Path
 $infraDir = $dir + '\Infrastructure' 
-
-#Create Shared Image Gallery 
-az deployment group create `
-  --resource-group $imageResourceGroup `
-  --name (New-Guid).Guid `
-  --template-file $infraDir\SharedImageGallery.json `
-  --parameters $parameterFile
-
-
 
 $galleryImageId = az sig image-definition show `
   --resource-group $imageResourceGroup `
@@ -118,12 +65,6 @@ $galleryImageId = az sig image-definition show `
 # Fix up the json parameters
 ((Get-Content -path $parameterFile -Raw) -replace '"galleryImageId":""', $('"galleryImageId":"' + $galleryImageId + '"')) | Set-Content -Path $parameterFile
 
-# Create Storage Account
-az deployment group create `
-  --resource-group $imageResourceGroup `
-  --name (New-Guid).Guid `
-  --template-file $infraDir\StorageAccount.Artifacts.json `
-  --parameters $parameterFile
 
 $storageAccountName = az storage account list `
   --resource-group $imageResourceGroup `
@@ -167,7 +108,7 @@ foreach ($artifactToUpload in $(Get-ChildItem -Path $StorageArtifactsDir -Recurs
 }
 
 
-$date = (Get-Date).AddMinutes(90).ToString("yyyy-MM-dTH:mZ")
+$date = (Get-Date).AddMinutes(180).ToString("yyyy-MM-dTH:mZ")
 $date = $date.Replace(".", ":")
 $AIBScriptBlobPath = az storage blob generate-sas `
   --account-name $storageAccountName `
@@ -181,6 +122,45 @@ $AIBScriptBlobPath = az storage blob generate-sas `
 
 # Set Parameter
 ((Get-Content -path $parameterFile -Raw) -replace '"AIBScriptBlobPath":""', $('"AIBScriptBlobPath":"' + $AIBScriptBlobPath + '"')) | Set-Content -Path $parameterFile
+
+
+# Zip binaries to be installed as part of Image build
+$dir = Get-Location | Split-Path
+$StorageArtifactsDir = $dir + '\StorageArtifacts'
+Compress-Archive -Path .\Binaries\* -DestinationPath $StorageArtifactsDir\Binaries\binaries.zip -Force
+
+$binariesSasToken = az storage container generate-sas `
+--account-name $storageAccountName `
+--name $binariesContainerName `
+--account-key $artifactsStorageKey `
+--permissions w `
+--output tsv
+    
+## upload artifacts to blob storage
+az storage blob upload `
+  --name binaries.zip `
+  --container-name $binariesContainerName.ToLower() `
+  --file $StorageArtifactsDir\Binaries\binaries.zip `
+  --account-name $storageAccountName `
+  --connection-string $connectionString `
+  --sas-token $binariesSasToken 
+                      
+
+# Get SAS for blobArtifacts
+$date = (Get-Date).AddMinutes(180).ToString("yyyy-MM-dTH:mZ")
+$date = $date.Replace(".", ":")
+
+$blobURI = az storage blob generate-sas `
+  --account-name $storageAccountName `
+  --container-name $binariesContainerName.ToLower() `
+  --name binaries.zip `
+  --account-key $artifactsStorageKey `
+  --permissions rw `
+  --expiry $date `
+  --full-uri `
+  --output tsv
+
+((Get-Content -path $parameterFile -Raw) -replace '"binariesUri":""', $('"binariesUri":"' + $blobUri + '"')) | Set-Content -Path $parameterFile
 
 
 
@@ -197,7 +177,7 @@ az image builder run `
   --resource-group $imageResourceGroup `
   --no-wait
 
-# This can take a bit of time
+# This can take a bit of time (1hr?)
 az image builder wait `
   --name $imageTemplateName `
   --resource-group $imageResourceGroup `
@@ -208,3 +188,4 @@ az image builder show `
   --resource-group $imageResourceGroup
 
 # az image builder delete --name $imageTemplateName --resource-group $imageResourceGroup
+

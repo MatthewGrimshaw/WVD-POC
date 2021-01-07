@@ -27,9 +27,7 @@
       "sku": "20h1-evd",
       "version": "latest",
       "AIBScriptBlobPath":"", 
-      "AIBScriptBlobName":"AIBWin10MSImageBuild.ps1",
-      "binariesContainerName":"binaries",
-      "binariesUri":""   
+      "AIBScriptBlobName":"AIBWin10MSImageBuild.ps1"      
       }
     }    
   }
