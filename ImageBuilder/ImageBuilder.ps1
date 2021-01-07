@@ -15,7 +15,6 @@ $params = Get-Content -Path $parameterFile -Raw | ConvertFrom-Json
 $subscriptionID = $params.parameters.deploymentParameters.value.subscriptionid
 $imageResourceGroup = $params.parameters.deploymentParameters.value.ImageBuilderResourceGroup
 $location = $params.parameters.deploymentParameters.value.location
-$imageRoleDefName = $params.parameters.deploymentParameters.value.ImageBuilderRoleDefintionName
 $galleryName = $params.parameters.deploymentParameters.value.galleryName
 $galleryImageDefinition = $params.parameters.deploymentParameters.value.galleryImageDefinitionName
 $imageTemplateName = $params.parameters.deploymentParameters.value.imageTemplateName
@@ -162,7 +161,7 @@ $blobURI = az storage blob generate-sas `
 
 ((Get-Content -path $parameterFile -Raw) -replace '"binariesUri":""', $('"binariesUri":"' + $blobUri + '"')) | Set-Content -Path $parameterFile
 
-
+# az image builder delete --name $imageTemplateName --resource-group $imageResourceGroup
 
 #Submit Image Template
 az deployment group create `
@@ -187,5 +186,5 @@ az image builder show `
   --name $imageTemplateName `
   --resource-group $imageResourceGroup
 
-# az image builder delete --name $imageTemplateName --resource-group $imageResourceGroup
+
 
