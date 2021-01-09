@@ -92,7 +92,17 @@ $registrationInfoToken = az desktopvirtualization hostpool show `
   --query registrationInfo.token `
   --output tsv
 
-$registrationInfoToken = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IkU3MDE1QTU5NzU5N0Y3RDg1MjMyRTRBOTA3QTU0OTYyNzNBNEIxMjAiLCJ0eXAiOiJKV1QifQ.eyJSZWdpc3RyYXRpb25JZCI6IjNkNzQ3MjQyLWNkMTEtNDQ0Yy05NGYxLTU3OTRiNjdlZjVjNyIsIkJyb2tlclVyaSI6Imh0dHBzOi8vcmRicm9rZXItZy11cy1yMC53dmQubWljcm9zb2Z0LmNvbS8iLCJEaWFnbm9zdGljc1VyaSI6Imh0dHBzOi8vcmRkaWFnbm9zdGljcy1nLXVzLXIwLnd2ZC5taWNyb3NvZnQuY29tLyIsIkVuZHBvaW50UG9vbElkIjoiNjg5ODRkMzItMmFiMS00ZTY0LWJlY2MtOTI0ZTI4NGI3N2M2IiwiR2xvYmFsQnJva2VyVXJpIjoiaHR0cHM6Ly9yZGJyb2tlci53dmQubWljcm9zb2Z0LmNvbS8iLCJHZW9ncmFwaHkiOiJVUyIsIm5iZiI6MTYwOTc2OTgwMywiZXhwIjoxNjEyMDQ3NjAwLCJpc3MiOiJSREluZnJhVG9rZW5NYW5hZ2VyIiwiYXVkIjoiUkRtaSJ9.wc1nV7mFAuQvjjI2gKO8oBacAaEYyp4R-4bZFlsGNfwX8zTu3F5VR6YrjxhJjalvVsiB53Lz_BX_iDYJIbQ7RvxDmlpAZtsw_AtD6EOu9Vu5fYl_jteyqNPIm70uDTaww2RK6olHSzlUWsAavocWtKgDsyP2Z19BZJxeqpG_pYZTSFkX3ruZKLxuTgsb8xzqSjUA_1UUl-9bGgfSuyQDMkT9ncRAnvMt6j0IdXIoh2ZfjbobvRCwqoiYuqoYj2ySAI3JFMHs-CTFacrAysEteeyqDKQoa5FRI0bBENbdH7EJlRPZEkeQ8fcr-XxVIqOdVPZPWcDAvp3HQyWZxotdyg'
+if(!$registrationInfoToken){
+  $date = (Get-Date).AddMinutes(90).ToString("yyyy-MM-ddTH:mm:ss:fffffffZ")
+  $date = $date.Replace(".", ":")
+  $registrationInfo = az desktopvirtualization hostpool update `
+  --registration-info expiration-time=$date registration-token-operation="Update" `
+  --name $hostPoolName `
+  --resource-group $wvdResourceGroupName
+
+  $registrationInfoToken =  ($registrationInfo | ConvertFrom-Json).registrationInfo.token
+}
+
 ((Get-Content -path $parameterFile -Raw) -replace '"registrationInfoToken":""', $('"registrationInfoToken":"' + $registrationInfoToken + '"')) | Set-Content -Path $parameterFile
 
 

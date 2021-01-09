@@ -22,11 +22,35 @@ $location = $params.parameters.deploymentParameters.value.location
 $imageResourceGroup = $params.parameters.deploymentParameters.value.ImageBuilderResourceGroup
 $ImageBuilderManagedIdentityName = $params.parameters.deploymentParameters.value.ImageBuilderManagedIdentityName
 $imageRoleDefName = $params.parameters.deploymentParameters.value.ImageBuilderRoleDefintionName
+$LogAnalyticsSubscriptionID = $params.parameters.deploymentParameters.value.LogAnalyticsSubscriptionID
+$logAnalyticsResourceGroupName = $params.parameters.deploymentParameters.value.logAnalyticsResourceGroupName
+$automationAccountResourceGroupName = $params.parameters.deploymentParameters.value.automationAccountResourceGroupName
+$logAnalyticsWorkspaceName = $params.parameters.deploymentParameters.value.logAnalyticsWorkspaceName
+$automationAccountName = $params.parameters.deploymentParameters.value.automationAccountName
+$logicAppResourceGroup = $params.parameters.deploymentParameters.value.logicAppResourceGroup
+$hostPoolName = $params.parameters.deploymentParameters.value.hostPoolName
+$wvdResourceGroupName = $params.parameters.deploymentParameters.value.wvdResourceGroupName
+$AutoAccountConnection = $params.parameters.deploymentParameters.value.AutoAccountConnection
+$RecurrenceInterval = $params.parameters.deploymentParameters.value.RecurrenceInterval
+$BeginPeakTime = $params.parameters.deploymentParameters.value.BeginPeakTime
+$EndPeakTime = $params.parameters.deploymentParameters.value.EndPeakTime
+$TimeDifference = $params.parameters.deploymentParameters.value.TimeDifference
+$SessionThresholdPerCPU = $params.parameters.deploymentParameters.value.SessionThresholdPerCPU
+$MinimumNumberOfRDSH = $params.parameters.deploymentParameters.value.MinimumNumberOfRDSH
+$WebhookName = $params.parameters.deploymentParameters.value.WebhookName
+$WebhookURIAutoVarName = $params.parameters.deploymentParameters.value.WebhookURIAutoVarName
+$runbookName = $params.parameters.deploymentParameters.value.runbookName
+$LogOffMessageBody = $params.parameters.deploymentParameters.value.LogOffMessageBody
+$LogOffMessageTitle = $params.parameters.deploymentParameters.value.LogOffMessageTitle
+$LimitSecondsToForceLogOffUser = $params.parameters.deploymentParameters.value.LimitSecondsToForceLogOffUser
 
 $domainJoinAccount = 'dummyValue'
 $domainJoinPassword = 'dummyValue'
 $localAdminAccountName = 'dummyValue'
 $localAdminAccountPassword = 'dummyValue'
+
+ 
+
 
 ## Check AZ is installed
 try {
@@ -39,7 +63,10 @@ catch {
   choco install azure-cli --version 2.15.1
   az version
 }
-  
+
+#allow AZ CLI extesnions to be installed
+az config set extension.use_dynamic_install=yes_without_prompt
+
 ## Connect to Azure
 az login #--tenant "72f988bf-86f1-41af-91ab-2d7cd011db47"
 az account set --subscription $subscriptionID 
@@ -221,3 +248,114 @@ foreach ($artifactToUpload in $(Get-ChildItem -Path $StorageArtifactsDir -Recurs
     --sas-token $SasToken 
                         
 }
+
+
+## Create LogAnalytics Resource Group
+#az account set --subscription $LogAnalyticsSubscriptionID
+az group create --location $location --name $logAnalyticsResourceGroupName
+
+# Create LogAnalytics Workspace 
+az deployment group create `
+  --resource-group $logAnalyticsResourceGroupName `
+  --name (New-Guid).Guid `
+  --template-file $infraDir\logAnalytics.json `
+  --parameters $parameterFile
+
+# Create Automation Account 
+az deployment group create `
+  --resource-group $automationAccountResourceGroupName `
+  --name (New-Guid).Guid `
+  --template-file $infraDir\AzureAutomation.json `
+  --parameters $parameterFile
+
+
+#Get Resource ID of automation account
+
+$AzAutomationAccountResourceID = az automation account show `
+  --name $automationAccountName `
+  --resource-group $automationAccountResourceGroupName `
+  --query 'id' `
+  --output tsv
+
+# Create linked Service for the Log Analytics Account to Azure Automation
+az monitor log-analytics workspace linked-service create --name automation `
+  --resource-group $logAnalyticsResourceGroupName `
+  --workspace-name $logAnalyticsWorkspaceName `
+  --resource-id $AzAutomationAccountResourceID 
+
+# Get the Log Analytics workspace resource ID
+$LogAnalyticsWorkspaceResourceID = az monitor log-analytics workspace show --resource-group $logAnalyticsResourceGroupName `
+  --workspace-name $logAnalyticsWorkspaceName `
+  --query 'id' `
+  --output tsv
+#Get the Log Analytics Key
+$LogAnalyticsPrimaryKey = az monitor log-analytics workspace get-shared-keys `
+  --resource-group $logAnalyticsResourceGroupName `
+  --workspace-name $logAnalyticsWorkspaceName `
+  --query 'primarySharedKey' `
+  --output tsv
+
+# configure Automation Account diagnostic settings
+az monitor diagnostic-settings create `
+  --name 'WVD-AutomationAccount-Diagnostics' `
+  --resource $AzAutomationAccountResourceID `
+  --logs    '[{\"category\": \"JobLogs\",\"enabled\": true}, {\"category\": \"JobStreams\",\"enabled\": true}]' `
+  --workspace $LogAnalyticsWorkspaceResourceID
+
+
+# Import Powershell modules to Automation Account
+
+[array]$RequiredModules = @(
+  'Az.Accounts'
+  'Az.Compute'
+  'Az.Resources'
+  'Az.Automation'
+  'OMSIngestionAPI'
+  'Az.DesktopVirtualization'
+)
+
+foreach ($ModuleName in $RequiredModules) {  
+  [string]$Url = "https://www.powershellgallery.com/api/v2/Search()?`$filter=IsLatestVersion&searchTerm=%27$ModuleName" # $ModuleVersion%27&targetFramework=%27%27&includePrerelease=false&`$skip=0&`$top=40"
+  New-AzAutomationModule -ResourceGroupName $automationAccountResourceGroupName -AutomationAccountName $automationAccountName -Name $ModuleName -ContentLink $Url -Verbose  
+}
+
+# create web hook
+$Webhook = New-AzAutomationWebhook -Name $WebhookName -RunbookName $RunbookName -IsEnabled $true -ExpiryTime (Get-Date).AddYears(5) -ResourceGroupName $automationAccountResourceGroupName -AutomationAccountName $automationAccountName -Force -Verbose
+New-AzAutomationVariable -Name $WebhookURIAutoVarName -Encrypted $false -ResourceGroupName $automationAccountResourceGroupName  -AutomationAccountName $automationAccountName -Value $Webhook.WebhookURI
+$WebhookURI = Get-AzAutomationVariable -Name $WebhookURIAutoVarName -ResourceGroupName $automationAccountResourceGroupName -AutomationAccountName $automationAccountName -ErrorAction SilentlyContinue
+
+
+# Create wvd Host Pools
+az deployment group create `
+  --resource-group $wvdResourceGroupName `
+  --name (New-Guid).Guid `
+  --template-file $infraDir\wvdHostPool.json `
+  --parameters $parameterFile
+
+# create Logic App
+
+$Params = @{
+  "AADTenantId"                   = $tennantID                               # Optional. If not specified, it will use the current Azure context
+  "SubscriptionID"                = $subscriptionID                          # Optional. If not specified, it will use the current Azure context
+  "ResourceGroupName"             = $logicAppResourceGroup                   # Optional. Default: "WVDAutoScaleResourceGroup"
+  "Location"                      = $location                                # Optional. Default: "West US2"
+  "UseARMAPI"                     = $true
+  "HostPoolName"                  = $hostPoolName
+  "HostPoolResourceGroupName"     = $wvdResourceGroupName                    # Optional. Default: same as ResourceGroupName param value
+  "LogAnalyticsWorkspaceId"       = $LogAnalyticsWorkspaceResourceID         # Optional. If not specified, script will not log to the Log Analytics
+  "LogAnalyticsPrimaryKey"        = $LogAnalyticsPrimaryKey                  # Optional. If not specified, script will not log to the Log Analytics
+  "ConnectionAssetName"           = $AutoAccountConnection                   # Optional. Default: "AzureRunAsConnection"
+  "RecurrenceInterval"            = $RecurrenceInterval                      # Optional. Default: 15
+  "BeginPeakTime"                 = $BeginPeakTime                           # Optional. Default: "09:00"
+  "EndPeakTime"                   = $EndPeakTime                             # Optional. Default: "17:00"
+  "TimeDifference"                = $TimeDifference                          # Optional. Default: "-7:00"
+  "SessionThresholdPerCPU"        = $SessionThresholdPerCPU                  # Optional. Default: 1
+  "MinimumNumberOfRDSH"           = $MinimumNumberOfRDSH                     # Optional. Default: 1
+  "MaintenanceTagName"            = $MaintenanceTagName                      # Optional.
+  "LimitSecondsToForceLogOffUser" = $LimitSecondsToForceLogOffUser           # Optional. Default: 1
+  "LogOffMessageTitle"            = $LogOffMessageTitle                      # Optional. Default: "Machine is about to shutdown."
+  "LogOffMessageBody"             = $LogOffMessageBody                       # Optional. Default: "Your session will be logged off. Please save and close everything."
+  "WebhookURI"                    = $WebhookURI.Value
+}
+
+.\CreateOrUpdateAzLogicApp.ps1 @Params

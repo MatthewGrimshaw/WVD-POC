@@ -57,6 +57,10 @@ These templates will create:
 * VNet peerings between the HUB networkk (Where Azure Firewall is deployed) and spoke networks (where the WVD Hosts are running)
 * NSGs and Route Tables for any VNETs that are deployed 
     * For Isolated VNETs, only rules allowing the Hosts to communicate with Active Directory and the Windows Virtual Desktop Management plane are deployed
+* A log Analytics workspace
+    * The Azure Automation account is configered to log to this workspace
+    * The WVD Hosts Azure Monitoring Agents will log to this accounts
+    * The Log Analytics workspace is configured to collect windows evetn logs and some performance counters
 
 &nbsp;
 &nbsp;
