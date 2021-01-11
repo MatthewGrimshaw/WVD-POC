@@ -162,6 +162,7 @@ $blobURI = az storage blob generate-sas `
 ((Get-Content -path $parameterFile -Raw) -replace '"binariesUri":""', $('"binariesUri":"' + $blobUri + '"')) | Set-Content -Path $parameterFile
 
 # az image builder delete --name $imageTemplateName --resource-group $imageResourceGroup
+# az image builder cancel --name $imageTemplateName --resource-group $imageResourceGroup
 
 #Submit Image Template
 az deployment group create `

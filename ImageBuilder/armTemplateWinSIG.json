@@ -65,7 +65,7 @@
                         "name": "UncompressBinaries",
                         "runElevated": true,
                         "inline":[
-                            "Expand-Archive -Path 'c:\\temp\\binaries.zip' -DestinationPath 'c:\\temp\\binaries\\' -force'"
+                            "Expand-Archive -Path 'c:\\temp\\binaries.zip' -DestinationPath 'c:\\temp\\binaries\\' -force"
                         ]
                     },
                     {
