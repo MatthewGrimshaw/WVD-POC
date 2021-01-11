@@ -4,12 +4,12 @@ The scripts and templates in this repo can be used to build a POC to demonstrate
 
 Azure Firewall is used to provide routing between VNETs and managed access to the Internet
 
-![Screenshot](Network.PNG)
+![Screenshot](Network.png)
 
 Windows Virtual Desktop Hosts can be isolated from one another to support certain customers security requirements.
 This is done by placing each host on a seperate VNET and using Azure Firewall to control routing between VNETS
 
-![Screenshot](NetworkIsolation.PNG)
+![Screenshot](NetworkIsolation.png)
 
 &nbsp;
 &nbsp;
