@@ -74,6 +74,14 @@ These templates will create:
 
 ## To Deploy this solution:
 
-* Correct the values in the deployment.Parameters.clean.json file
-* Make sure you are in the 'ImageBuilder' Directory
-* Run the ImageBuilder.ps1 script
+* Correct the values in the deployment.Parameters.clean.json files
+    * Any properties that contain the '<>' symbols should be updated (for example "subscriptionid" : "<>",)
+    * Any properties that contqin an existing value can be overwritten
+    * Other values should be left blank and will updated dynamically
+* Review and make any changes reqauired to the 'AIBWin10MSImageBuild.ps1' script
+* Place any LOB or custom software binaries in the 'StorageArtifacts\Binaries' folder
+* Make sure you are in the correct directory to run the scripts
+    * Run the 'deployInfrastructure.ps1' script first
+    * Then run the 'ImageBuilder.ps1' scripts
+    * Then run the 'DeployWVDHostsNetwork.ps1' and 'DeployIsolatedWVDHostsNetwork.ps1' scripts
+    * Finally run the 'deployWVDHosts.ps1' and 'deployIsolatedWVDHosts.ps1' scripts
