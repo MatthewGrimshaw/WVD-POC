@@ -60,37 +60,6 @@ New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\
 If(Test-Path c:\temp\binaries){write-host "c:\temp\binaries exists"}
 If(!(Test-Path c:\temp\binaries)){write-host "c:\temp\binaries does not exist"}
 
-# Install Custom Software
-write-host "Install Custom Software"
-write-host "Install Mediator"
-try {
-    Start-Process "msiexec.exe" -ArgumentList "/i `"Mediator 9.msi`" TRANSFORMS=`"Mediator 9 ENNI.mst`" /qn /l*v c:\temp\binaries\Mediator9.log" -WorkingDirectory "c:\temp\binaries\1164_08_M-Mediator9\" -Wait
-    write-host "install NewWaveConceptsPCBWizard"
-    Start-Process "msiexec.exe" -ArgumentList "/i `"1808_01_M-NewWaveConceptsPCBWizardV3.7.msi`" /qn /l*v c:\temp\binaries\NewWaveConcepts.log" -WorkingDirectory "c:\temp\binaries\1808_01_M-NewWaveConceptsPCBWizardV3.7\" -Wait
-    write-host "Install audioscore"
-    Start-Process "msiexec.exe" -ArgumentList "/i `"audioscore lite.msi`" /qn /l*v c:\temp\binaries\audioscorelite.log" -WorkingDirectory "c:\temp\binaries\1826_02_M-NueratronAudioScoreLite6.5\" -Wait 
-    write-host "Install Sibelius"
-    Start-Process "msiexec.exe" -ArgumentList "/i `"Sibelius 6.msi`" TRANSFORMS=`"Sibelius 6.mst`" /qn /l*v c:\temp\binaries\Sibelius6.msi" -WorkingDirectory "c:\temp\binaries\1827_03_M-AvidSibelius6\" -Wait
-    write-host "Install Create A Story"
-    Start-Process "msiexec.exe" -ArgumentList "/i `"2Simple 2Create A Story 1.0.0.922.msi`" /qn /l*v c:\temp\binaries\2Simple2CreateAStory.log " -WorkingDirectory "c:\temp\binaries\1837_01_M-2Simple2CreateAStory1.0.0.922\" -Wait
-    write-host "Install All About Number"
-    Start-Process "msiexec.exe" -ArgumentList "/i `"All About Number At Level 1 1.0.MSI`" /qn /l*v c:\temp\binaries\AllAboutNumberAtLevel1.log" -WorkingDirectory "c:\temp\binaries\1863_01_M-GranadaAllAboutNumberAtLevel1.0\" -Wait
-    write-host "Install Spider in the Kitchen"
-    Start-Process "msiexec.exe" -ArgumentList "/i `"Spider in the Kitchen 2.0.msi`" /qn /l*v c:\temp\binaries\SpiderintheKitchen.log" -WorkingDirectory "c:\temp\binaries\1986_01_M-InclusiveTechnologiesSpiderInTheKitchen2.0\" -Wait
-    write-host "Install Tizzys Toybox"
-    Start-Process "msiexec.exe" -ArgumentList "/i `"Tizzys Toybox SE 1.0.msi`" /qn /l*v c:\temp\binaries\TizzysToybox.log" -WorkingDirectory "c:\temp\binaries\2033_01_M-SherstonSoftwareTizzysToyboxSE1.0\" -Wait
-    write-host "Install AdobePhotoshop"
-    Start-Process "setup.exe" -ArgumentList "--silent" -WorkingDirectory "c:\temp\binaries\2190_01_M-AdobePhotoshopCCV2020\build\" -Wait
-    write-host "Install Adobe Premier Pro"
-    Start-Process "setup.exe" -ArgumentList "--silent" -WorkingDirectory "c:\temp\binaries\2194_01_M-AdobePremiere ProCC2020\build\" -Wait
-    }
-catch {
-    $ErrorMessage = $_.Exception.Message
-    $FailedItem = $_.Exception.ItemName
-    write-host "Failed to install packages"
-    write-host $ErrorMessage
-    write-host $FailedItem
-}
 
 
 #Install Dev Software
@@ -143,7 +112,8 @@ try{
 
         write-host "Install Postman"
         choco install postman -y
-}
+
+  }
 catch{
     $ErrorMessage = $_.Exception.Message
     $FailedItem = $_.Exception.ItemName

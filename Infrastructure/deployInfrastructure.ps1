@@ -83,11 +83,11 @@ az provider register --namespace Microsoft.KeyVault
 # Create Key Vault
 
 ## Get Variables for Key Vault deployment
-$tennantID = az account show --query tenantId --output tsv
+$tenantID = az account show --query tenantId --output tsv
 $objectId = az ad user show --id $keyVaultUser --query objectId --out tsv 
 
 # Fix up the json parameters
-((Get-Content -path $parameterFile -Raw) -replace '"tennantID":""', $('"tennantID":"' + $tennantID + '"')) | Set-Content -Path $parameterFile
+((Get-Content -path $parameterFile -Raw) -replace '"tenantID":""', $('"tenantID":"' + $tenantID + '"')) | Set-Content -Path $parameterFile
 ((Get-Content -path $parameterFile -Raw) -replace '"objectId":""', $('"objectId":"' + $objectId + '"')) | Set-Content -Path $parameterFile
 
 
@@ -208,8 +208,10 @@ az deployment group create `
   --template-file $infraDir\StorageAccount.Artifacts.json `
   --parameters $parameterFile
 
+$SharedInfraResourceGroup = 'rg-uks-c2k-shared-assets'
+
 $storageAccountName = az storage account list `
-  --resource-group $wvdHostsResourceGroup `
+  --resource-group $SharedInfraResourceGroup `
   --query [0].'name' `
   --output tsv    
 
@@ -228,7 +230,7 @@ $SasToken = az storage container generate-sas `
 
     
 $connectionString = az storage account show-connection-string `
-  --resource-group $wvdHostsResourceGroup `
+  --resource-group $SharedInfraResourceGroup `
   --name $storageAccountName `
   --output tsv
       
@@ -335,7 +337,7 @@ az deployment group create `
 # create Logic App
 
 $Params = @{
-  "AADTenantId"                   = $tennantID                               # Optional. If not specified, it will use the current Azure context
+  "AADTenantId"                   = $tenantID                               # Optional. If not specified, it will use the current Azure context
   "SubscriptionID"                = $subscriptionID                          # Optional. If not specified, it will use the current Azure context
   "ResourceGroupName"             = $logicAppResourceGroup                   # Optional. Default: "WVDAutoScaleResourceGroup"
   "Location"                      = $location                                # Optional. Default: "West US2"

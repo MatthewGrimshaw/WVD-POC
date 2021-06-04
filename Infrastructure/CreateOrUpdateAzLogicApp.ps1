@@ -132,10 +132,10 @@ if ($AADTenantId -ne $AzContext.Tenant.Id -or $SubscriptionId -ne $AzContext.Sub
 }
 
 # Get the Role Assignment of the authenticated user
-$RoleAssignments = Get-AzRoleAssignment -SignInName $AzContext.Account -ExpandPrincipalGroups
-if (!($RoleAssignments | Where-Object { $_.RoleDefinitionName -in @('Owner', 'Contributor') })) {
-	throw 'Authenticated user should have the Owner/Contributor permissions to the subscription'
-}
+#$RoleAssignments = Get-AzRoleAssignment -SignInName $AzContext.Account -ExpandPrincipalGroups
+#if (!($RoleAssignments | Where-Object { $_.RoleDefinitionName -in @('Owner', 'Contributor') })) {
+#	throw 'Authenticated user should have the Owner/Contributor permissions to the subscription'
+#}
 
 if ($UseRDSAPI) {
 	# Get the WVD context

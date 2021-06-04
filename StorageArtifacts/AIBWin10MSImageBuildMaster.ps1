@@ -81,7 +81,7 @@ try {
     Start-Process "msiexec.exe" -ArgumentList "/i `"Tizzys Toybox SE 1.0.msi`" /qn /l*v c:\temp\binaries\TizzysToybox.log" -WorkingDirectory "c:\temp\binaries\2033_01_M-SherstonSoftwareTizzysToyboxSE1.0\" -Wait
     write-host "Install AdobePhotoshop"
     Start-Process "setup.exe" -ArgumentList "--silent" -WorkingDirectory "c:\temp\binaries\2190_01_M-AdobePhotoshopCCV2020\build\" -Wait
-    write-host "Install Adobe Premier Pro"
+    write/host "Install Adopbe Premier Pro"
     Start-Process "setup.exe" -ArgumentList "--silent" -WorkingDirectory "c:\temp\binaries\2194_01_M-AdobePremiere ProCC2020\build\" -Wait
     }
 catch {
@@ -156,3 +156,8 @@ catch{
 write-host Get-Date
 write-host "Done - Stop Transaction Logging"
 Stop-Transcript
+
+
+$env:AZCOPY_CRED_TYPE = "Anonymous";
+azcopy.exe copy "C:\Users\matgri\Repos\WVD-POC\StorageArtifacts\Binaries\Binaries.zip" "https://storslrsuksapppkg.blob.core.windows.net/binaries/Binaries.zip?sv=2019-12-12&se=2021-02-23T11%3A14%3A04Z&sr=c&sp=rwl&sig=sELgj9LfxMEaquZsiwgKZR28paUvfOePs3QiEd6myPA%3D" --overwrite=prompt --from-to=LocalBlob --blob-type Detect --follow-symlinks --put-md5 --follow-symlinks --recursive;
+$env:AZCOPY_CRED_TYPE = "";

@@ -5,6 +5,7 @@
     "deploymentParameters": {
       "value": {
         "subscriptionid": "<>",
+        "tenantID":"<>",
         "wvdHostResourceGroupName": "WVD-Hosts",
         "wvdResourceGroupName": "wvd",
         "keyVaultName": "<>",
@@ -14,11 +15,12 @@
         "ouPath": "<>",
         "dscArtifactsName": "Configuration.zip",
         "dscArtifactsLocation": "<>",
+        "dscArtifactsResourceGroupName":"<>",
         "registrationInfoToken":"",
         "hostPoolName": "SecureVMHosts",
         "deployIsolatedHosts": false,
         "artifactsContainerName": "wvdArtifactsContainer",
-        "resourceIdPrefix": "<>",
+        "resourceIdPrefix":"",
         "subnetName": "WVDSubnet",
         "vnetName": "WVDVNet",
         "count": 3,
@@ -38,7 +40,7 @@
         "osVMDiskType": "Premium_LRS",
         "galleryName": "wvdImageGallery",
         "galleryImageDefinitionName": "Windows10MultiUser",
-        "galleryImageId": "<>",
+        "galleryImageId":"",
         "galleryImageVersionName": "latest",
         "securityRules": [
           {
@@ -59,7 +61,7 @@
     "localAdminAccountUserName": {
       "reference": {
         "keyVault": {
-          "id": "<>"
+          "id":""
         },
         "secretName": "localAdminAccountName"
       }
@@ -67,7 +69,7 @@
     "localAdminAccountPassword": {
       "reference": {
         "keyVault": {
-          "id": "<>"
+          "id": ""
         },
         "secretName": "localAdminAccountPassword"
       }
@@ -75,7 +77,7 @@
     "domainJoinAccount": {
       "reference": {
         "keyVault": {
-          "id": "<>"
+          "id":""
         },
         "secretName": "domainJoinAccount"
       }
@@ -83,9 +85,25 @@
     "domainJoinPassword": {
       "reference": {
         "keyVault": {
-          "id": "<>"
+          "id":""
         },
         "secretName": "domainJoinPassword"
+      }
+    },
+    "workspaceId": {
+      "reference": {
+        "keyVault": {
+          "id":""
+        },
+        "secretName": "workspaceId"
+      }
+    },
+    "workspaceKey": {
+      "reference": {
+        "keyVault": {
+          "id":""
+        },
+        "secretName": "workspaceKey"
       }
     }
   }

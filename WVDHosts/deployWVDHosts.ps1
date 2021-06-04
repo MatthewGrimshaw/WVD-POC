@@ -25,6 +25,7 @@ $galleryName = $params.parameters.deploymentParameters.value.galleryName
 $galleryImageDefinitionName = $params.parameters.deploymentParameters.value.galleryImageDefinitionName
 $hostPoolName = $params.parameters.deploymentParameters.value.hostPoolName
 $wvdResourceGroupName = $params.parameters.deploymentParameters.value.wvdResourceGroupName
+$dscArtifactsResourceGroupName = $params.parameters.deploymentParameters.value.dscArtifactsResourceGroupName
 
 
 ## Check AZ is installed
@@ -58,7 +59,7 @@ $KeyVaultResourceID = az keyvault show `
 
 # get Storage Account Name and Key
 $storageAccountName = az storage account list `
-  --resource-group $wvdHostsResourceGroup `
+  --resource-group $dscArtifactsResourceGroupName `
   --query [0].'name' `
   --output tsv
 

@@ -291,6 +291,22 @@
         },
         "secretName": "domainJoinPassword"
       }
+    },
+    "workspaceId": {
+      "reference": {
+        "keyVault": {
+          "id":"/subscriptions/2779cb6b-7c7c-4699-bb6b-0b4bfeb272d6/resourceGroups/rg-uks-c2k-h1s01-identity/providers/Microsoft.KeyVault/vaults/kv-uks-c2k-shared-01"
+        },
+        "secretName": "workspaceId"
+      }
+    },
+    "workspaceKey": {
+      "reference": {
+        "keyVault": {
+          "id":"/subscriptions/2779cb6b-7c7c-4699-bb6b-0b4bfeb272d6/resourceGroups/rg-uks-c2k-h1s01-identity/providers/Microsoft.KeyVault/vaults/kv-uks-c2k-shared-01"
+        },
+        "secretName": "workspaceKey"
+      }
     }
   }
 }

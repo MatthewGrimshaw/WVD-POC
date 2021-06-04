@@ -6,7 +6,7 @@ If (!(((Get-Location) -split '\\')[-1] -Match 'WVDHosts')) {
 }
   
 #Create Paramters File
-€
+$parameterFile = '.\deployment.Parameters.json'
 Copy-Item .\deployment.Parameters.clean.json $parameterFile
 
 #Read in Variables
@@ -58,7 +58,7 @@ $KeyVaultResourceID = az keyvault show `
 
 # get Storage Account Name and Key
 $storageAccountName = az storage account list `
-  --resource-group $wvdHostsResourceGroup `
+  --resource-group 'rg-uks-c2k-shared-assets' `
   --query [0].'name' `
   --output tsv
 

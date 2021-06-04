@@ -30,7 +30,7 @@
                 "description": "Azure Image Builder WVD gallery image definition",
                 "osType": "Windows",
                 "osState": "Generalized",
-                "endOfLifeDate": "2021-01-01",
+                "endOfLifeDate": "2023-01-01",
                 "identifier": {
                     "publisher": "[parameters('deploymentParameters').publisher]",
                     "offer": "[parameters('deploymentParameters').offer]",

@@ -78,8 +78,7 @@ do {
     --name  $peeringName  `
     --vnet-name $vnetname `
     --remote-vnet $fwVnetID `
-    --allow-vnet-access `
-    --use-remote-gateways
+    --allow-vnet-access 
 
   ## Create vnet peering to spoke
   #az account set --subscription $params.parameters.deploymentParameters.value.fwSubscriptionid
@@ -94,8 +93,7 @@ do {
     --name  $peeringNameToHub `
     --vnet-name $AzfwVnetName `
     --remote-vnet $spokeVnetID `
-    --allow-vnet-access `
-    --allow-gateway-transit
+    --allow-vnet-access 
 
   #Create Firewall Routes
   $startInteger = $netStartInteger + $i
@@ -129,3 +127,6 @@ do {
   $i++
 
 } while ($i -lt $count)
+
+
+

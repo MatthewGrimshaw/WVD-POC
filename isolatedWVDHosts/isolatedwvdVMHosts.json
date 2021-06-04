@@ -20,6 +20,12 @@
         },
         "domainJoinPassword": {
             "type": "securestring"
+        },
+                "workspaceId": {
+            "type": "securestring"
+        },
+        "workspaceKey": {
+            "type": "securestring"
         }
     },
 
@@ -187,6 +193,67 @@
                         "hostPoolName": "[parameters('deploymentParameters').hostPoolName]",
                         "registrationInfoToken": "[parameters('deploymentParameters').registrationInfoToken]"
                     }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(parameters('deploymentParameters').vmPrefix, copyIndex(), '-VM', '/malware')]",
+            "apiVersion": "2019-07-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', parameters('deploymentParameters').vmPrefix, copyIndex(), '-VM')]"
+            ],
+            "copy": {
+                "name": "rdsh-antimalware-loop",
+                "count": "[parameters('deploymentParameters').count]"
+            },
+            "properties": {
+                "publisher": "Microsoft.Azure.Security",
+                "type": "IaaSAntimalware",
+                "typeHandlerVersion": "1.3",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "AntimalwareEnabled": "true",
+                    "Exclusions": {
+                        "Extensions": ".log;.ldf",
+                        "Paths": "D:\\IISlogs;D:\\DatabaseLogs",
+                        "Processes": "mssence.svc"
+                    },
+                    "RealtimeProtectionEnabled": "true",
+                    "ScheduledScanSettings": {
+                        "isEnabled": "true",
+                        "scanType": "Quick",
+                        "day": "7",
+                        "time": "120"
+                    }
+                },
+                "protectedSettings": null
+            }
+        },
+        {
+
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(parameters('deploymentParameters').vmPrefix, copyIndex(), '-VM', '/Microsoft.Insights.LogAnalyticsAgent')]",
+            "apiVersion": "2015-06-15",
+            "location": "[parameters('deploymentParameters').location]",
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', parameters('deploymentParameters').vmPrefix, copyIndex(), '-VM')]"
+            ],
+            "copy": {
+                "name": "rdsh-monitoring-loop",
+                "count": "[parameters('deploymentParameters').count]"
+            },
+            "properties": {
+                "publisher": "Microsoft.EnterpriseCloud.Monitoring",
+                "type": "MicrosoftMonitoringAgent",
+                "typeHandlerVersion": "1.0",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "workspaceId": "[parameters('workspaceId')]"
+                },
+                "protectedSettings": {
+                    "workspaceKey": "[parameters('workspaceKey')]"
                 }
             }
         }
